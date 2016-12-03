@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+    	<meta charset="utf-8">
+    	<title>MIC of antibiotics</title>
+    	<script type="text/javascript" src="http://d3js.org/d3.v3.min.js"></script>
+    	<style type="text/css">
+            
+            .axis path,
+            .axis line {
+                fill: none;
+                stroke: black;
+                shape-rendering: crispEdges;
+            }
+
+            .axis text {
+                font-family: sans-serif;
+                font-size: 11px;
+            }
+            
+
+    	</style>
+   	</head>
+   	<body>
+   		<script type="text/javascript">
+   		
+			//Width and height
+			var margin = {top: 40, right: 60, bottom: 150, left: 50};
+            var w = 600 - margin.left - margin.right;
+            var h = 400 - margin.top - margin.bottom;
+			
+			var dataset;
+			
+			var neomycin = [];
+			var penicillin = [];
+			var streptomycin = [];
+			
+			var subset = neomycin;
+					
+			//Load MIC data
+            d3.csv("a1-burtin.long.csv", function(data) {
+                console.log(data);
+                dataset = data;
+                
+                var entry;
+                for (entry = 0; entry < dataset.length; entry++) {
+                	dataset[entry].MIC = Number(dataset[entry].MIC)
+                }
+                
+				var o;
+
+   				for (o = 0; o < dataset.length; o++) {
+   					if (dataset[o].Antibiotic == "Neomycin") {
+   						neomycin.push(Number(o));
+   					}
+   					if (dataset[o].Antibiotic == "Penicillin") {
+   						penicillin.push(Number(o));
+   					}
+   					if (dataset[o].Antibiotic == "Streptomycin") {
+   						streptomycin.push(Number(o));
+   					}
+   				}
+                
+                generateVis();
+                
+
+            });
+
+			var generateVis = function() {
+
+   				
+				var xScale = d3.scale.ordinal()
+								.domain(d3.range(subset.length))
+								.rangeRoundBands([0, w], 0.05);
+								
+				var yScale = d3.scale.linear()
+								.domain([0, d3.max(dataset.slice(subset[0],subset[15]+1), function(d) { return d.MIC; })])
+								.range([h, 0]);
+
+				//Define Y axis
+                var yAxis = d3.svg.axis()
+                                .scale(yScale)
+                                .orient("left")
+                                .ticks(5);
+				
+				//Create SVG element
+				var svg = d3.select("body")
+							.append("svg")
+							.attr("width", w + margin.left + margin.right)
+                            .attr("height", h + margin.top + margin.bottom)
+                            .append("g")
+                            .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+				
+				//Create bars
+				var bars = svg.selectAll("rect.plot")
+				   .data(dataset.slice(subset[0],subset[15]+1))
+				   .enter();
+				bars.append("rect")
+					.attr("class", "plot")
+				   .attr("x", function(d, i) {
+						return xScale(i);
+				   })
+				   .attr("y", function(d) {
+						return yScale(d.MIC);
+				   })
+				   .attr("width", xScale.rangeBand())
+				   .attr("height", function(d) {
+						return h - yScale(d.MIC);
+				   })
+				   .attr("fill", function(d) {
+						if (d.Gram_Staining == "positive") {
+							return "#551A8B"; //purple
+						}
+						else {
+							return "#D02090"; //pink
+						}
+				   });
+
+                    
+                
+                //Add labels
+                var texts = svg.selectAll("text.plot")
+                    .data(dataset.slice(subset[0],subset[15]+1))
+                    .enter();
+				texts.append("text")
+					.attr("class", "plot")
+					.text(function(d) {
+						return d.MIC;
+					})
+					.attr("x", function(d, i) {
+						return xScale(i);
+					})
+					.attr("y", function(d) {
+						return yScale(d.MIC) - 2;
+					})
+					.attr("font-family", "sans-serif")
+                    .attr("font-size", "11px")
+                    .attr("fill", "black"); 
+				texts.append("text")
+                    .text(function(d) {
+                        return d.Bacteria;
+                    })
+                    .attr("transform", function(d, i) {
+                        return "translate(" + (i * (w / subset.length) + 8) + "," + (h + 10) + ")rotate(50)";
+                    })
+                    .attr("font-family", "sans-serif")
+                    .attr("font-size", "11px")
+                    .attr("font-style", "italic")
+                    .attr("fill", "black");	
+				
+
+				
+				var title = svg.selectAll("text.title")
+				    .data(dataset.slice(subset[0],subset[1]))
+                    .enter();
+                title.append("text")
+                	.attr("class", "title")
+					.text(function(d) { return d.Antibiotic; })
+					.attr("y", -20)
+					.attr("font-family", "sans-serif")
+                    .attr("font-size", "14px")
+                    .attr("font-weight", "bold")
+                    .attr("fill", "black");   			
+   			
+				//Create Y axis				
+                svg.append("g")
+                    .attr("class","axis")
+                    .call(yAxis);
+				
+				//Create Y label
+				svg.append("text")
+					.text("Minimum Inhibitory Concentration (\u03BCg /mL)")
+					.attr("transform", "rotate(-90)")
+					.attr("y", -margin.left + 15)
+					.attr("x", - h)
+					.attr("font-family", "sans-serif")
+                    .attr("font-size", "12px")
+                    .attr("fill", "black");
+                    
+				//Create legend
+				svg.append("g")
+					.attr("class", "legend")
+					.append("rect")
+					.attr("x", -40)
+                	.attr("y", 310)
+					.attr("width", 20)
+                	.attr("height", 20)
+                	.attr("fill", "#551A8B");
+				
+				svg.select(".legend")
+					.append("rect")
+					.attr("x", -40)
+                	.attr("y", 340)
+					.attr("width", 20)
+                	.attr("height", 20)
+                	.attr("fill", "#D02090");
+				
+				svg.select(".legend")
+					.append("text")
+					.text("Gram positive")
+                	.attr("x", -10)
+                	.attr("y", 325)
+					.attr("font-family", "sans-serif")
+					.attr("font-size", "14px")
+					.attr("fill", "black");
+				
+				svg.select(".legend")
+					.append("text")
+					.text("Gram negative")
+                	.attr("x", -10)
+                	.attr("y", 355)
+					.attr("font-family", "sans-serif")
+					.attr("font-size", "14px")
+					.attr("fill", "black");
+					
+
+   				
+   				
+   			//On click, update with new data
+			var click = 0;			
+			d3.select("body")
+				.on("click", function() {
+									
+					click++;
+					
+					if (click == 1) {
+						subset = penicillin;
+					}
+					if (click == 2) {
+						subset = streptomycin;
+					}
+					if (click == 3) {
+						subset = neomycin;
+						click = 0;						
+					}
+					
+					//Update scale
+					var yScale = d3.scale.linear()
+									.domain([0, d3.max(dataset.slice(subset[0],subset[15]+1), function(d) { return d.MIC; })])
+									.range([h, 0]);
+			
+					//Update Y axis
+					var yAxis = d3.svg.axis()
+									.scale(yScale)
+									.orient("left")
+									.ticks(5);
+					
+					
+					//Update bars
+					svg.selectAll("rect.plot")
+					   .data(dataset.slice(subset[0],subset[15]+1))
+					   .transition()
+					   .duration(1000)
+					   .attr("x", function(d, i) {
+							return xScale(i);
+					   })
+					   .attr("y", function(d) {
+							return yScale(d.MIC);
+					   })
+					   .attr("width", xScale.rangeBand())
+					   .attr("height", function(d) {
+							return h - yScale(d.MIC);
+					   })
+					   .attr("fill", function(d) {
+							if (d.Gram_Staining == "positive") {
+								return "#551A8B"; //purple
+							}
+							else {
+								return "#D02090"; //pink
+							}
+					   });
+					
+					//Update labels
+                    svg.selectAll("text.plot")
+						.data(dataset.slice(subset[0],subset[15]+1))
+						.transition()
+						.duration(1000)
+						.text(function(d) {
+							return d.MIC;
+						})
+						.attr("x", function(d, i) {
+							return xScale(i);
+						})
+						.attr("y", function(d) {
+							return yScale(d.MIC) - 2;
+						})
+						.attr("font-family", "sans-serif")
+						.attr("font-size", "11px")
+						.attr("fill", "black"); 
+
+					svg.selectAll("text.title")
+						.data(dataset.slice(subset[0],subset[1]))
+						.transition()
+						.duration(1000)
+						.text(function(d) { return d.Antibiotic; })
+						.attr("y", -20)
+						.attr("font-family", "sans-serif")
+						.attr("font-size", "14px")
+						.attr("font-weight", "bold")
+						.attr("fill", "black");
+
+					//Update Y axis
+					svg.select(".axis")
+						.transition()
+						.duration(1000)
+						.call(yAxis);
+					
+				});
+			
+			}
+   		
+   		</script>
+   	</body>
+</html>
