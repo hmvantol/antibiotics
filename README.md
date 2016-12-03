@@ -15,7 +15,7 @@ This plot was admired for its simplicity in comparing the effects of different a
 
 I used Burtin’s data to create a simple bar plot that alternates between displays of different antibiotics. The plot more clearly shows that Gram positive bacteria are more resistant to streptomycin and neomycin while Gram negative bacteria are more resistant to penicillin. It also shows which bacteria do not follow the trend. Gram-staining uses violet and pink dyes to distinguish between different groups of bacteria by cell wall structure.
 
-
+<br>
 <b>Source material:</b>
 
 <a href="http://chimera.labs.oreilly.com/books/1230000000345/index.html">Interactive Data Visualization for the Web</a> by Scott Murray
